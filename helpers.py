@@ -1,7 +1,23 @@
 from datapoint import DataPoint 
 from fusionekf import FusionEKF
+from twoD_QIM import QIM_encode_twobit
+import numpy as np
 
-def parse_data(file_path):
+
+# def write_data(read_file_path, write_file_path):
+#   #This functions reads a file, modify its content and write it to another file
+#   ##the caveat in this approach is we are doing the polar to cartesian back and forth conversions
+#   read_file = open(read_file_path, "R")
+#   write_file = open(write_file_path, "W")
+
+#   for line in read_file:
+#     data = line.split()
+      # for 
+
+
+
+
+def parse_data(file_path, ENCODE=False):
   """
     Args:
     file_path 
@@ -42,7 +58,10 @@ def parse_data(file_path):
   """
 
   all_sensor_data = []
-  all_ground_truths = []  
+  all_ground_truths = []
+  
+  if(ENCODE): 
+    message = 0
 
   with open(file_path) as f:
       
@@ -51,13 +70,17 @@ def parse_data(file_path):
       
       if data[0]  == 'L':
         
-        sensor_data = DataPoint({ 
+        data_read = { 
           'timestamp': int(data[3]),
           'name': 'lidar',
           'x': float(data[1]), 
-          'y': float(data[2])
-        })
-        
+          'y': float(data[2]),
+          'vx': 0.0,
+          'vy': 0.0
+        }
+        # print('data read LiDAR', data_read['x'],data_read['y'],data_read['vx'],data_read['vx'])
+        sensor_data = DataPoint(data_read)
+        # print('data read LiDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
         g = {'timestamp': int(data[3]),
              'name': 'state',
              'x': float(data[4]),
@@ -67,17 +90,29 @@ def parse_data(file_path):
         }
           
         ground_truth = DataPoint(g)
+        # print('Ground truth LiDAR', ground_truth.data[0],ground_truth.data[1], ground_truth.data[2], ground_truth.data[3] )
                 
       elif data[0] == 'R':
-          
-        sensor_data = DataPoint({ 
+        #herer sensor_data is the output of the DataPoint class   
+        data_read = { 
           'timestamp': int(data[4]),
           'name': 'radar',
           'rho': float(data[1]), 
           'phi': float(data[2]),
           'drho': float(data[3])
-        })
-       
+        }
+        
+        
+        sensor_data = DataPoint(data_read)
+        # print('data read raDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
+        #Here we implement the QIM if used as an option
+        if(ENCODE):
+          #only modify x,y
+          sensor_data.data[0],sensor_data.data[1] = QIM_encode_twobit(np.array([sensor_data.data[0],sensor_data.data[1]]), message)
+          print('encoded data read raDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
+          message += 1
+          message %= 4
+
         g = {'timestamp': int(data[4]),
              'name': 'state',
              'x': float(data[5]),
@@ -85,7 +120,9 @@ def parse_data(file_path):
              'vx': float(data[7]),
              'vy': float(data[8])
         }
+        
         ground_truth = DataPoint(g)  
+        # print('Ground truth raDAR',ground_truth.data[0],ground_truth.data[1], ground_truth.data[2], ground_truth.data[3]  )
 
       all_sensor_data.append(sensor_data)
       all_ground_truths.append(ground_truth)

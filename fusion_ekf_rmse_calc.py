@@ -48,7 +48,7 @@ def debug_print_sensordata(sensor_data):
       x,y,vx,vy = sens_data.get()
       print('x={}, y={}'. format(x,y))
 
-def QIM_encode_twobit(sensor_data):
+def QIM_encode_twobit_wholemessage(sensor_data):
   #for now we assume that the watermark is sequence 0,1,2,3
   message = 0
   modified_sensor_data = []
@@ -68,24 +68,29 @@ def QIM_encode_twobit(sensor_data):
       message %= 4
   return modified_sensor_data
 
+
+
 if __name__ == '__main__':
  
     #get the ground truths and the measurement data from input file data-1.txt
-    all_sensor_data, all_ground_truths = parse_data("data/data_radargt.txt")
-    #print('before*************)
-    debug_print_sensordata(all_sensor_data)
-    new_sensor_data = QIM_encode_twobit(all_sensor_data)
-    print('After*************')
-    for x in new_sensor_data:
-      print('x={},y={}'. format(x[0], x[1]))
-
-    # modify the px, py using two bit QIM
-
-
-    # #get the predictions from the EKF class
-    # all_state_estimations = get_state_estimations(EKF1, all_sensor_data)
-    # #calculate the RMSE between the estimations and ground truths
-    # px, py, vx, vy = get_RMSE(all_state_estimations, all_ground_truths)
-    # #print the EKF data
+    all_sensor_data, all_ground_truths = parse_data("data/data-2.txt")
+    #get the predictions from the EKF class
+    all_state_estimations = get_state_estimations(EKF1, all_sensor_data)
+    #calculate the RMSE between the estimations and ground truths
+    px, py, vx, vy = get_RMSE(all_state_estimations, all_ground_truths)
+    #print RMSE
+    print('RMSE: px = {} | py = {} | vx = {} | vy = {}'. format(px, py, vx, vy))
+    #print the EKF data
     # print_EKF_data(all_sensor_data, all_ground_truths, all_state_estimations, 
-    #            RMSE = [px, py, vx, vy])
+              #  RMSE = [px, py, vx, vy])
+
+    #get the ground truths and the measurement data from input file data-1.txt
+    all_sensor_data, all_ground_truths = parse_data("data/data-2.txt", ENCODE= True)
+    #get the predictions from the EKF class
+    all_state_estimations = get_state_estimations(EKF1, all_sensor_data)
+    #calculate the RMSE between the estimations and ground truths
+    #print RMSE
+    px, py, vx, vy = get_RMSE(all_state_estimations, all_ground_truths)
+    print('ENCODED RMSE: px = {} | py = {} | vx = {} | vy = {}'. format(px, py, vx, vy))
+    #print the EKF data
+    # print_EKF_data(all_sensor_data, all_ground_truths, all_state_estimations, 

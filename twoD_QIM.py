@@ -19,7 +19,7 @@ pc_input = np.array([ 40.30910863,   8.56577551,  54.46320516,  60.39623699,
 #global variables.. 
 # ***************
 # modify this value for changing the delta
-DELTA_VAR = 5.0
+DELTA_VAR = 50.0
 
 DELTA = DELTA_VAR/100.0
 HALFDELTA = DELTA/2.0
@@ -135,6 +135,14 @@ def qim_quantize_twobits(pc_message_in):
     if(pc_row_count > len(pc_message_in)):
         print('something wrong.. exceeded length of pc')
     return  quant_encoded
+
+def QIM_encode_twobit(sensor_data, message):
+  modified_x, modified_y = 0,0
+  quant_two_bit_value = qim_quantize_twobit(sensor_data, message)
+#   print('embedded quantized value x={},y={}'. format(quant_two_bit_value[0], quant_two_bit_value[1]) )
+  qim_encoded_pointcloud = getPointCloud_from_quantizedValues( quant_two_bit_value)
+  modified_x, modified_y = qim_encoded_pointcloud[0],qim_encoded_pointcloud[1]
+  return (modified_x, modified_y)
 
 if __name__ == '__main__':
 
