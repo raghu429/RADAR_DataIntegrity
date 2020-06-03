@@ -19,7 +19,7 @@ pc_input = np.array([ 40.30910863,   8.56577551,  54.46320516,  60.39623699,
 #global variables.. 
 # ***************
 # modify this value for changing the delta
-DELTA_VAR = 50.0
+DELTA_VAR = 500.0
 
 DELTA = DELTA_VAR/100.0
 HALFDELTA = DELTA/2.0
@@ -130,19 +130,42 @@ def qim_quantize_twobits(pc_message_in):
         quant_encoded.append(quant_two_bit_value)
         message += 1
         message %= 4          
-        # print('row# and code book', pc_row_count, code_book)
+        print('row# and code book', pc_row_count, code_book)
         pc_row_count +=  1
     if(pc_row_count > len(pc_message_in)):
         print('something wrong.. exceeded length of pc')
     return  quant_encoded
 
+#function that takes one row of the message data at a time
 def QIM_encode_twobit(sensor_data, message):
   modified_x, modified_y = 0,0
   quant_two_bit_value = qim_quantize_twobit(sensor_data, message)
-#   print('embedded quantized value x={},y={}'. format(quant_two_bit_value[0], quant_two_bit_value[1]) )
+  print('embedded quantized value x={},y={}'. format(quant_two_bit_value[0], quant_two_bit_value[1]) )
   qim_encoded_pointcloud = getPointCloud_from_quantizedValues( quant_two_bit_value)
+  print('twoDQIm: Encode_twobit: m = {}, Ox={}, Ex= {}, Oy={},Ey={}'. format(message, sensor_data[0], qim_encoded_pointcloud[0], sensor_data[1], qim_encoded_pointcloud[1]) )
   modified_x, modified_y = qim_encoded_pointcloud[0],qim_encoded_pointcloud[1]
   return (modified_x, modified_y)
+
+#functon that takes entire sensor data
+def QIM_encode_twobit_wholemessage(sensor_data):
+    #for now we assume that the watermark is sequence 0,1,2,3
+    message = 0
+    modified_sensor_data = []
+    for sens_data in sensor_data:
+        if sens_data.get_name() == "radar":
+            x,y,vx,vy = sens_data.get()
+            print('initial',x,y)
+            pc_in = np.array([x,y])
+            quant_two_bit_value = qim_quantize_twobit(pc_in, message)
+            # print('embedded quantized value x={},y={}'. format(quant_two_bit_value[0], quant_two_bit_value[1]) )
+            qim_encoded_pointcloud = getPointCloud_from_quantizedValues( quant_two_bit_value)
+            sens_data.set_raw_radar(qim_encoded_pointcloud[0], qim_encoded_pointcloud[1])
+            x,y,vx,vy = sens_data.get()
+            modified_sensor_data.append([x,y,vx,vy])
+            # print('final', x,y)
+            message += 1
+            message %= 4
+    return modified_sensor_data
 
 if __name__ == '__main__':
 

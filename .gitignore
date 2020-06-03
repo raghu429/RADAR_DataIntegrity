@@ -1,0 +1,12 @@
+# Ignore py backup files
+.pyc
+
+# Ignore node_modules folder
+data
+
+# Ignore all text files
+*.txt
+
+# Ignore files related to API keys
+.env
+

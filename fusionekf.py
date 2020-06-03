@@ -71,6 +71,7 @@ class FusionEKF:
     if data.get_name() == 'radar':        
       
       px, py, vx, vy = x[0, 0], x[1, 0], x[2, 0], x[3, 0]
+      # print('fusion_ekf:update: px ={},py ={},vx ={},vy ={}'.format(px, py, vx, vy))
       rho, phi, drho = cartesian_to_polar(px, py, vx, vy)
       H = calculate_jacobian(px, py, vx, vy)
       Hx = (np.matrix([[rho, phi, drho]])).T
@@ -88,15 +89,21 @@ class FusionEKF:
     
     self.timestamp = data.get_timestamp()
     x = np.matrix([data.get()]).T
+    # print('**fusion ekf:start:x',x)
     self.kalmanFilter.start(x, self.P, self.F, self.Q)
     self.initialized = True
     
   def process(self, data):
     
-    if self.initialized: 
+    if self.initialized:
+      # print('in update step')
       self.update(data)
     else:
+      # print('in start step')
       self.start(data)
 
   def get(self):
     return self.kalmanFilter.getx()
+
+  def reset_filter(self):
+    self.initialized = False

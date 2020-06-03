@@ -2,6 +2,7 @@ from datapoint import DataPoint
 from fusionekf import FusionEKF
 from twoD_QIM import QIM_encode_twobit
 import numpy as np
+from tools import polar_to_cartesian, cartesian_to_polar
 
 
 # def write_data(read_file_path, write_file_path):
@@ -13,9 +14,6 @@ import numpy as np
 #   for line in read_file:
 #     data = line.split()
       # for 
-
-
-
 
 def parse_data(file_path, ENCODE=False):
   """
@@ -78,9 +76,9 @@ def parse_data(file_path, ENCODE=False):
           'vx': 0.0,
           'vy': 0.0
         }
-        # print('data read LiDAR', data_read['x'],data_read['y'],data_read['vx'],data_read['vx'])
+        # print('helpers:parse_data: data read LiDAR', data_read['x'],data_read['y'],data_read['vx'],data_read['vx'])
         sensor_data = DataPoint(data_read)
-        # print('data read LiDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
+        # print('helpers:parse_data: data read LiDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
         g = {'timestamp': int(data[3]),
              'name': 'state',
              'x': float(data[4]),
@@ -90,29 +88,38 @@ def parse_data(file_path, ENCODE=False):
         }
           
         ground_truth = DataPoint(g)
-        # print('Ground truth LiDAR', ground_truth.data[0],ground_truth.data[1], ground_truth.data[2], ground_truth.data[3] )
+        # print('helpers:parse_data: Ground truth LiDAR', ground_truth.data[0],ground_truth.data[1], ground_truth.data[2], ground_truth.data[3] )
                 
       elif data[0] == 'R':
         #herer sensor_data is the output of the DataPoint class   
-        data_read = { 
+        if(ENCODE): #Here we implement the QIM if used as an option
+          #convert to cartesian
+          x, y, vx, vy = polar_to_cartesian(float(data[1]),float(data[2]),float(data[3]))
+          #embedd data - only modify x,y
+          x,y = QIM_encode_twobit(np.array([x,y]), message)
+          #print('helpers:parse_data: encoded data read raDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
+          message += 1
+          message %= 4
+          #convert to polar
+          rhho, phhi, derho = cartesian_to_polar(x, y, vx, vy)
+          data_read = { 
+          'timestamp': int(data[4]),
+          'name': 'radar',
+          'rho': float(rhho), 
+          'phi': float(phhi),
+          'drho': float(derho)
+          }
+        else:
+          data_read = { 
           'timestamp': int(data[4]),
           'name': 'radar',
           'rho': float(data[1]), 
           'phi': float(data[2]),
           'drho': float(data[3])
-        }
-        
-        
+          }        
         sensor_data = DataPoint(data_read)
-        # print('data read raDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
-        #Here we implement the QIM if used as an option
-        if(ENCODE):
-          #only modify x,y
-          sensor_data.data[0],sensor_data.data[1] = QIM_encode_twobit(np.array([sensor_data.data[0],sensor_data.data[1]]), message)
-          print('encoded data read raDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
-          message += 1
-          message %= 4
-
+        #print('helpers:parse_data: data read raDAR', sensor_data.data[0],sensor_data.data[1],sensor_data.data[2],sensor_data.data[3] )
+  
         g = {'timestamp': int(data[4]),
              'name': 'state',
              'x': float(data[5]),
@@ -122,7 +129,7 @@ def parse_data(file_path, ENCODE=False):
         }
         
         ground_truth = DataPoint(g)  
-        # print('Ground truth raDAR',ground_truth.data[0],ground_truth.data[1], ground_truth.data[2], ground_truth.data[3]  )
+        # print('helpers:parse_data: Ground truth raDAR',ground_truth.data[0],ground_truth.data[1], ground_truth.data[2], ground_truth.data[3]  )
 
       all_sensor_data.append(sensor_data)
       all_ground_truths.append(ground_truth)
@@ -147,12 +154,11 @@ def get_state_estimations(EKF, all_sensor_data):
   all_state_estimations = []
 
   for data in all_sensor_data:
-    
+    # print('helpers:get_state_estimations: data={}'.format(data.get()))
     EKF.process(data)
-  
     x = EKF.get()
     px, py, vx, vy = x[0, 0], x[1, 0], x[2, 0], x[3, 0]
-
+    # print('helpers:get_state_estimations:output:  px={},py={},vx={},vy={}'.format(px, py, vx, vy))
     g = {'timestamp': data.get_timestamp(),
          'name': 'state',
          'x': px,
@@ -162,7 +168,8 @@ def get_state_estimations(EKF, all_sensor_data):
 
     state_estimation = DataPoint(g)  
     all_state_estimations.append(state_estimation)
-    
+
+  EKF.reset_filter()
   return all_state_estimations 
 
 def print_EKF_data(all_sensor_data, all_ground_truths, all_state_estimations, RMSE):

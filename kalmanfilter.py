@@ -24,7 +24,7 @@ class KalmanFilter:
     self.Q = None
   
   def start(self, x, P, F, Q):
-
+    # print('kalmanfilter: inside start')
     self.x = x
     self.P = P
     self.F = F
@@ -37,10 +37,11 @@ class KalmanFilter:
     self.F[0, 2], self.F[1, 3]  = dt, dt
  
   def getx(self):
+    # print('KF getx:', self.x)
     return self.x
 
   def predict(self):
-        
+    # print('**KF:predict', self.x)
     self.x = self.F * self.x
     self.P = self.F * self.P * self.F.T + self.Q
     

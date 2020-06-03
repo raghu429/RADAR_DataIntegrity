@@ -1,4 +1,4 @@
-from tools import polar_to_cartesian
+from tools import polar_to_cartesian, cartesian_to_polar
 
 class DataPoint:
   """
@@ -24,6 +24,8 @@ class DataPoint:
     elif self.name == 'radar':
       x, y, vx, vy = polar_to_cartesian(d['rho'], d['phi'], d['drho'])
       self.data = [x, y, vx, vy]
+      # rhho, phhi, derho = cartesian_to_polar(x, y, vx, vy)
+      # self.raw = [rhho, phhi, derho]
       self.raw = [d['rho'], d['phi'], d['drho']]
     
     self.all['processed_data'] = self.data

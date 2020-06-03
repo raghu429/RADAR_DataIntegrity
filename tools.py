@@ -73,9 +73,9 @@ def get_RMSE(predictions, truths):
 
     ppx, ppy, pvx, pvy = p.get()
 
-    # print('predictions', ppx, ppy, pvx, pvy)
+    # print('tools:getRMSE:predictions', ppx, ppy, pvx, pvy)
     tpx, tpy, tvx, tvy = t.get()
-    # print('gt', tpx, tpy, tvx, tvy)
+    # print('tools:getRMSE: Gt', tpx, tpy, tvx, tvy)
     
     pxs += [(ppx - tpx) * (ppx - tpx)]
     pys += [(ppy - tpy) * (ppy - tpy)]

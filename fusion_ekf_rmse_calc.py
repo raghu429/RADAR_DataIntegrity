@@ -46,51 +46,54 @@ def debug_print_sensordata(sensor_data):
   for sens_data in sensor_data:
     if sens_data.get_name() == "radar":
       x,y,vx,vy = sens_data.get()
-      print('x={}, y={}'. format(x,y))
-
-def QIM_encode_twobit_wholemessage(sensor_data):
-  #for now we assume that the watermark is sequence 0,1,2,3
-  message = 0
-  modified_sensor_data = []
-  for sens_data in sensor_data:
-    if sens_data.get_name() == "radar":
-      x,y,vx,vy = sens_data.get()
-      print('initial',x,y)
-      pc_in = np.array([x,y])
-      quant_two_bit_value = qim_quantize_twobit(pc_in, message)
-      # print('embedded quantized value x={},y={}'. format(quant_two_bit_value[0], quant_two_bit_value[1]) )
-      qim_encoded_pointcloud = getPointCloud_from_quantizedValues( quant_two_bit_value)
-      sens_data.set_raw_radar(qim_encoded_pointcloud[0], qim_encoded_pointcloud[1])
-      x,y,vx,vy = sens_data.get()
-      modified_sensor_data.append([x,y,vx,vy])
-      # print('final', x,y)
-      message += 1
-      message %= 4
-  return modified_sensor_data
+      print('x={}, y={}, vx={}, vy={}'. format(x,y,vx,vy))
 
 
 
 if __name__ == '__main__':
  
     #get the ground truths and the measurement data from input file data-1.txt
+    all_sensor_data = []
+    all_ground_truths = []
+    all_state_estimations = []
     all_sensor_data, all_ground_truths = parse_data("data/data-2.txt")
+    print('plain radar sensor data\n')
+    debug_print_sensordata(all_sensor_data)
     #get the predictions from the EKF class
     all_state_estimations = get_state_estimations(EKF1, all_sensor_data)
+    
+    
+    
     #calculate the RMSE between the estimations and ground truths
     px, py, vx, vy = get_RMSE(all_state_estimations, all_ground_truths)
     #print RMSE
+    print('\n')
     print('RMSE: px = {} | py = {} | vx = {} | vy = {}'. format(px, py, vx, vy))
+    print('\n')
+    print('\n')
     #print the EKF data
     # print_EKF_data(all_sensor_data, all_ground_truths, all_state_estimations, 
-              #  RMSE = [px, py, vx, vy])
+    #            RMSE = [px, py, vx, vy])
 
+
+    all_sensor_data = []
+    all_ground_truths = []
+    all_state_estimations = []
     #get the ground truths and the measurement data from input file data-1.txt
     all_sensor_data, all_ground_truths = parse_data("data/data-2.txt", ENCODE= True)
+    print('encoded radar sensor data\n')
+    debug_print_sensordata(all_sensor_data)
+    
     #get the predictions from the EKF class
     all_state_estimations = get_state_estimations(EKF1, all_sensor_data)
     #calculate the RMSE between the estimations and ground truths
     #print RMSE
     px, py, vx, vy = get_RMSE(all_state_estimations, all_ground_truths)
+    print('\n')
     print('ENCODED RMSE: px = {} | py = {} | vx = {} | vy = {}'. format(px, py, vx, vy))
-    #print the EKF data
+    print('\n')
+    print('\n')
+
+    # print the EKF data
     # print_EKF_data(all_sensor_data, all_ground_truths, all_state_estimations, 
+    #            RMSE = [px, py, vx, vy])
