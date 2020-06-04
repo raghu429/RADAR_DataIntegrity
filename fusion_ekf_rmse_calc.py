@@ -12,9 +12,13 @@ from twoD_QIM import qim_quantize_twobit, getPointCloud_from_quantizedValues
 lidar_R = np.matrix([[0.01, 0], 
                      [0, 0.01]])
 
-radar_R = np.matrix([[0.01, 0, 0], 
-                     [0, 0.000001, 0], 
-                     [0, 0, 0.01]])
+# radar_R = np.matrix([[0.01, 0, 0], 
+#                      [0, 0.000001, 0], 
+#                      [0, 0, 0.01]])
+
+radar_R = np.matrix([[0.1, 0, 0], 
+                     [0, 0.001, 0], 
+                     [0, 0, 0.1]])
 
 lidar_H = np.matrix([[1, 0, 0, 0],
                      [0, 1, 0, 0]])
@@ -58,7 +62,7 @@ if __name__ == '__main__':
     all_state_estimations = []
     all_sensor_data, all_ground_truths = parse_data("data/data-2.txt")
     print('plain radar sensor data\n')
-    debug_print_sensordata(all_sensor_data)
+    # debug_print_sensordata(all_sensor_data)
     #get the predictions from the EKF class
     all_state_estimations = get_state_estimations(EKF1, all_sensor_data)
     
@@ -67,10 +71,10 @@ if __name__ == '__main__':
     #calculate the RMSE between the estimations and ground truths
     px, py, vx, vy = get_RMSE(all_state_estimations, all_ground_truths)
     #print RMSE
+    # print('\n')
+    print('RMSE: {},{},{},{}'. format(px, py, vx, vy))
     print('\n')
-    print('RMSE: px = {} | py = {} | vx = {} | vy = {}'. format(px, py, vx, vy))
-    print('\n')
-    print('\n')
+    # print('\n')
     #print the EKF data
     # print_EKF_data(all_sensor_data, all_ground_truths, all_state_estimations, 
     #            RMSE = [px, py, vx, vy])
@@ -82,17 +86,18 @@ if __name__ == '__main__':
     #get the ground truths and the measurement data from input file data-1.txt
     all_sensor_data, all_ground_truths = parse_data("data/data-2.txt", ENCODE= True)
     print('encoded radar sensor data\n')
-    debug_print_sensordata(all_sensor_data)
+    # debug_print_sensordata(all_sensor_data)
     
     #get the predictions from the EKF class
     all_state_estimations = get_state_estimations(EKF1, all_sensor_data)
     #calculate the RMSE between the estimations and ground truths
     #print RMSE
     px, py, vx, vy = get_RMSE(all_state_estimations, all_ground_truths)
+    # print('\n')
+    # print('ENCODED RMSE: px = {} | py = {} | vx = {} | vy = {}'. format(px, py, vx, vy))
+    print('ENCODED RMSE: {},{},{},{}'. format(px, py, vx, vy))
     print('\n')
-    print('ENCODED RMSE: px = {} | py = {} | vx = {} | vy = {}'. format(px, py, vx, vy))
-    print('\n')
-    print('\n')
+    # print('\n')
 
     # print the EKF data
     # print_EKF_data(all_sensor_data, all_ground_truths, all_state_estimations, 
