@@ -35,9 +35,9 @@ def tamperRadarAddTracklets(data_in):
     #for now this is fixed but this can be variable as-well
     copy_row_num = 2
     add_location_list = []
-    for i in range (1,2):
+    for i in range (1,4):
         # print('data length ={}'.format(np.shape(data_in)[0]))
-        r1 = random.randint(0, np.shape(data_in)[0]-2)
+        r1 = random.randint(0, np.shape(data_in)[0]-7)
         #copy a rwo element from the data
         copy_row = data_in[copy_row_num+i]
         #paste it at a random location
@@ -48,7 +48,7 @@ def tamperRadarAddTracklets(data_in):
 def tamperRadarDeleteTracklets(data_in):
     data_out = data_in
     del_location_list = []
-    for i in range (1,2):
+    for i in range (1,4):
         r1 = random.randint(0, np.shape(data_in)[0]-2)
         #delete a rwo element from the data
         data_out =  np.delete(data_out, r1, axis = 0)
@@ -58,7 +58,7 @@ def tamperRadarDeleteTracklets(data_in):
 def tamperRadarModifyTracklets(data_in):
     data_out = data_in
     mod_location_list = []
-    for i in range (1,2):
+    for i in range (1,4):
         r1 = random.randint(0, np.shape(data_in)[0]-2)
         #modify a rwo element in the data
         data_out[r1] =  data_out[r1+1]
@@ -152,12 +152,12 @@ if __name__ == '__main__':
     qim_encoded_pointcloud = getPointCloud_from_quantizedValues(  np.copy(voxel_halfdelta_npy))
     print('encoded data', qim_encoded_pointcloud)
 
-    pred_plusNoise = tamperRadarAddUniformNoise(0.001, qim_encoded_pointcloud)
+    pred_plusNoise = tamperRadarAddUniformNoise(0.0, qim_encoded_pointcloud)
     print('noise added pc={}'.format(pred_plusNoise))
     
     #open the encoded data and tamper it by adding noise and attack vectors
-    # added_indices, pred_plus_added = tamperRadarAddTracklets(pred_plusNoise)
-    added_indices, pred_plus_added = tamperRadarDeleteTracklets(pred_plusNoise)
+    added_indices, pred_plus_added = tamperRadarAddTracklets(pred_plusNoise)
+    # added_indices, pred_plus_added = tamperRadarDeleteTracklets(pred_plusNoise)
     # added_indices, pred_plus_added = tamperRadarModifyTracklets(pred_plusNoise)
 
     
@@ -185,11 +185,12 @@ if __name__ == '__main__':
     groundtruth_list = np.packbits(encoded_cb, axis = 1)
     print('gt_list={}'.format(groundtruth_list))
 
-    # added_indices_recovered = findAddedIndices(groundtruth_list, modified_list)
+    added_indices_recovered = findAddedIndices(groundtruth_list, modified_list)
     # added_indices_recovered = findModifiedIndices(groundtruth_list, modified_list)
-    added_indices_recovered = findDeletedIndices(groundtruth_list, modified_list)
+    # added_indices_recovered = findDeletedIndices(groundtruth_list, modified_list)
     
     print('recovered indices:{}'.format(added_indices_recovered))
+    print('added indices:{}'.format(added_indices))
     
     if(np.all(added_indices_recovered==added_indices)):
         print('you got it buddy! finally..phew!!!!)')
