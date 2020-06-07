@@ -18,53 +18,56 @@ def radarDataExtractor(filePath):
     with open(filePath) as read_file:
         # read_file = open(filePath, "R")
         radar_data = []
+        count  = 0
         for line in read_file:
             data = line.split()
             if(data[0] == 'R'):
                 [x, y, vx, vy] = polar_to_cartesian(float(data[1]),float(data[2]),float(data[3]))
                 radar_data.append([x, y])
+            count += 1 # restrict it to 100 elements
+            # if (count == 50):
+                # break
+                
     return radar_data
 
 def tamperRadarAddUniformNoise(noise_sigma, data_in):
     uniform_noise_added_data = data_in + np.random.uniform(-noise_sigma, noise_sigma, 2*len(data_in)).reshape(-1,2)
     return uniform_noise_added_data
 
-
 def tamperRadarAddTracklets(data_in):
     data_out = data_in
-    #for now this is fixed but this can be variable as-well
-    copy_row_num = 2
+    #this tell how many data element syou want to tamper
+    data_corruption_range = 30
+    random_list = np.sort(random.sample(range(2, (np.shape(data_in)[0]-1)), data_corruption_range))
+    # print('random list', random_list, len(random_list))
     add_location_list = []
-    for i in range (1,4):
+    for rl in random_list:
         # print('data length ={}'.format(np.shape(data_in)[0]))
-        r1 = random.randint(0, np.shape(data_in)[0]-7)
-        #copy a rwo element from the data
-        copy_row = data_in[copy_row_num+i]
+        #copy a previous row element from the data
+        copy_row = data_out[rl-1]
         #paste it at a random location
-        data_out = np.insert(data_out, r1, copy_row, axis = 0)
-        add_location_list.append(r1)
+        data_out = np.insert(data_out, rl, copy_row, axis = 0)
+        add_location_list.append(rl)
     return add_location_list, data_out
 
 def tamperRadarDeleteTracklets(data_in):
     data_out = data_in
-    del_location_list = []
-    for i in range (1,4):
-        r1 = random.randint(0, np.shape(data_in)[0]-2)
-        #delete a rwo element from the data
-        data_out =  np.delete(data_out, r1, axis = 0)
-        del_location_list.append(r1)
-    return del_location_list, data_out
-
+    data_corruption_range = 30
+    random_list = np.sort(random.sample(range(2, (np.shape(data_in)[0]-1)), data_corruption_range))
+    data_out = np.delete(data_in, random_list, axis = 0)
+    return random_list, data_out
+    
 def tamperRadarModifyTracklets(data_in):
     data_out = data_in
     mod_location_list = []
-    for i in range (1,4):
-        r1 = random.randint(0, np.shape(data_in)[0]-2)
+    data_corruption_range = 30
+    random_list = np.sort(random.sample(range(2, (np.shape(data_in)[0]-1)), data_corruption_range))
+    for rl in random_list:
+        # r1 = random.randint(0, np.shape(data_in)[0]-2)
         #modify a rwo element in the data
-        data_out[r1] =  data_out[r1+1]
-        mod_location_list.append(r1)
+        data_out[rl] =  data_out[rl+1]
+        mod_location_list.append(rl)
     return mod_location_list, data_out
-
 
 
 #these three functions check for the missing indices, added indices and modified indices assuming the input is a list of repeating pattens
@@ -110,7 +113,6 @@ def findAddedIndices(gt_list, mod_list):
         print('index = {}, added element = {}'. format((mod_index), mod_list[mod_index]))
         added_indices.append(mod_index)
         mod_index += 1
-    pass
     return added_indices
 
 
@@ -142,23 +144,23 @@ if __name__ == '__main__':
 
     #extract radar data
     radar_data_predictions = radarDataExtractor("data/data-2.txt")
-    print('original data:', radar_data_predictions)
+    # print('original data:', radar_data_predictions)
     radar_data_predictions = np.array([radar_data_predictions]).reshape(-1,2)
     #encode the data for a given step-size
     voxel_halfdelta = qim_quantize_twobits(radar_data_predictions)
     voxel_halfdelta_npy = np.array([voxel_halfdelta]).reshape(-1,2)
-    print('quant encoded shape', voxel_halfdelta_npy.shape, voxel_halfdelta_npy)
+    # print('quant encoded shape', voxel_halfdelta_npy.shape, voxel_halfdelta_npy)
     
     qim_encoded_pointcloud = getPointCloud_from_quantizedValues(  np.copy(voxel_halfdelta_npy))
     print('encoded data', qim_encoded_pointcloud)
 
     pred_plusNoise = tamperRadarAddUniformNoise(0.0, qim_encoded_pointcloud)
-    print('noise added pc={}'.format(pred_plusNoise))
+    # print('noise added pc={}'.format(pred_plusNoise))
     
     #open the encoded data and tamper it by adding noise and attack vectors
-    added_indices, pred_plus_added = tamperRadarAddTracklets(pred_plusNoise)
+    # added_indices, pred_plus_added = tamperRadarAddTracklets(pred_plusNoise)
     # added_indices, pred_plus_added = tamperRadarDeleteTracklets(pred_plusNoise)
-    # added_indices, pred_plus_added = tamperRadarModifyTracklets(pred_plusNoise)
+    added_indices, pred_plus_added = tamperRadarModifyTracklets(pred_plusNoise)
 
     
     print('added indices:{}'.format(added_indices))
@@ -171,7 +173,7 @@ if __name__ == '__main__':
 
     #calculate the BER
     encoded_cb = qim_dummy_encoded_pc(len(radar_data_predictions.reshape(-1,NUMBITS)))
-    print('encoded cb', encoded_cb)
+    # print('encoded cb', encoded_cb)
     # uncomment below to test if the tamper index finder is working
     #encoded_cb[2] = [1,1]
     #encoded_cb[4] = [0,1]
@@ -185,13 +187,23 @@ if __name__ == '__main__':
     groundtruth_list = np.packbits(encoded_cb, axis = 1)
     print('gt_list={}'.format(groundtruth_list))
 
-    added_indices_recovered = findAddedIndices(groundtruth_list, modified_list)
-    # added_indices_recovered = findModifiedIndices(groundtruth_list, modified_list)
+    # added_indices_recovered = findAddedIndices(groundtruth_list, modified_list)
+    added_indices_recovered = findModifiedIndices(groundtruth_list, modified_list)
     # added_indices_recovered = findDeletedIndices(groundtruth_list, modified_list)
     
-    print('recovered indices:{}'.format(added_indices_recovered))
-    print('added indices:{}'.format(added_indices))
+  
+
+    sorted_add_indices = np.sort(added_indices)
+    sorted_recovered_indices = np.sort(added_indices_recovered)
     
-    if(np.all(added_indices_recovered==added_indices)):
+    print('recovered indices:\t{}'.format(sorted_recovered_indices))
+    print('added indices:\t\t{}'.format(sorted_add_indices))
+    # sorted_add_indices[0] = 12
+    # sorted_add_indices[2] = 12
+    error_prediction =  np.where(sorted_recovered_indices != sorted_add_indices)
+    if(len(error_prediction[0])):
+        print('error n prediction, mismatch indices:{}'.format(error_prediction[0]))
+    else:
         print('you got it buddy! finally..phew!!!!)')
+
 
