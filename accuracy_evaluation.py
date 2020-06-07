@@ -38,6 +38,7 @@ def tamperRadarAddTracklets(data_in):
     data_out = data_in
     #this tell how many data element syou want to tamper
     data_corruption_range = 30
+    #sorted non-duplicate list
     random_list = np.sort(random.sample(range(2, (np.shape(data_in)[0]-1)), data_corruption_range))
     # print('random list', random_list, len(random_list))
     add_location_list = []
@@ -143,7 +144,7 @@ if __name__ == '__main__':
 
 
     #extract radar data
-    radar_data_predictions = radarDataExtractor("data/data-2.txt")
+    radar_data_predictions = radarDataExtractor("data/data-1.txt")
     # print('original data:', radar_data_predictions)
     radar_data_predictions = np.array([radar_data_predictions]).reshape(-1,2)
     #encode the data for a given step-size
