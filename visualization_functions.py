@@ -15,15 +15,40 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def path_plots(gt_xs, gt_ys, clean_xs, clean_ys, encoded_xs, encoded_ys):
-    # print((gt_xs))
-    plt.plot(gt_xs,gt_ys, 'b*', label='Ground truth path')
-    plt.plot(clean_xs,clean_ys, 'go', label='Path prediction on clean frames')
-    plt.plot(encoded_xs,encoded_ys, 'r*', label='Path prediction on encoded frames')
     
-    plt.title('Path taken by the vehicle')
-    plt.xlabel('position x (px)')
-    plt.ylabel('position y (py)')
-    plt.legend(loc='best')
+#this code plots the difference in the encoded path and the clean path estimate using subplots
+    fig, axs = plt.subplots(1, 2)
+    axs[0].plot(gt_xs, gt_ys, label='Ground Truth Path (GT)', color = 'g')
+    axs[0].set_title('GTvs Plain estimate')
+    axs[0].plot(clean_xs, clean_ys, label='Plain Predicted Path', color = 'y')
+    axs[0].legend(loc="upper left")
+    # axs[0, 0].set_title('Axis [0,0]')
+
+    # fig, axs = plt.subplots(1, 2)
+    axs[1].plot(gt_xs, gt_ys,  label='Ground Truth Path', color = 'g')
+    axs[1].set_title('GT Vs encoded estimate')
+    axs[1].plot(encoded_xs, encoded_ys, label='Encoded Path', color='r')
+    axs[1].legend(loc="upper right")
+
+    # axs[0, 1].plot(gt_xs, gt_xs, 'tab:orange')
+    # axs[0, 1].set_title('Axis [0,1]')
+    
+    for ax in axs.flat:
+        ax.set(xlabel='position x (px)', ylabel='position y (py)')
+
+    # Hide x labels and tick labels for top plots and y ticks for right plots.
+    for ax in axs.flat:
+        ax.label_outer()
+
+
+    # plt.plot(gt_xs,gt_ys, 'b.', label='Ground truth path')
+    # plt.plot(clean_xs,clean_ys, 'y.', label='Path prediction on clean frames')
+    # plt.plot(encoded_xs,encoded_ys, 'r.', label='Path prediction on encoded frames')
+    
+    # plt.title('Path taken by the vehicle')
+    # plt.xlabel('position x (px)')
+    # plt.ylabel('position y (py)')
+    # plt.legend(loc='best')
     plt.show()
 
 # path_visualize(all_ground_truths, clean_all_sensor_data, clean_all_state_estimations, encoded_all_sensor_data, encoded_all_state_estimations)
