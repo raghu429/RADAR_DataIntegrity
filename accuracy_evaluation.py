@@ -3,8 +3,8 @@ import numpy as np
 import random
 
 from tools import polar_to_cartesian, cartesian_to_polar
-from twoD_QIM import qim_quantize_twobits, getPointCloud_from_quantizedValues, qim_decode, NUMBITS, qim_dummy_encoded_pc, get_tamperedindices_twobits
-
+from twoD_QIM import qim_quantize_twobits, getPointCloud_from_quantizedValues, qim_decode, NUMBITS, qim_dummy_encoded_pc, get_tamperedindices_twobits, DELTA
+from visualization_functions import visulalize_accuracy, visulalize_RMSE
 
 # #** This piece of code contants methods to evaluate the 2D QIM embedding for the given Udacity data-set. We can further split this file into three different files if needed (most of the previously developed code could be re-used)
 # First - read the data file and generate a separate binary file with just the radar data
@@ -78,7 +78,7 @@ def findDeletedIndices(gt_list, mod_list):
     gt_index = 0
     mod_index = 0
     missing_indices = []
-    while(mod_index < len(mod_list) or gt_index < len(gt_list)):
+    while(mod_index < len(mod_list) and gt_index < len(gt_list)):
         if(gt_list[gt_index] ==  mod_list[mod_index]):
             mod_index += 1
             gt_index += 1
@@ -86,6 +86,8 @@ def findDeletedIndices(gt_list, mod_list):
         print('missing index = {}, missing element = {}'. format((gt_index), gt_list[gt_index]))
         missing_indices.append(gt_index)
         gt_index += 1
+        print('gt_index', gt_index)
+        print('mod_index', mod_index)
     return missing_indices
 
 def findModifiedIndices(gt_list, mod_list):
@@ -106,7 +108,7 @@ def findAddedIndices(gt_list, mod_list):
     gt_index = 0
     mod_index = 0
     added_indices = []
-    while(mod_index < len(mod_list) or gt_index < len(gt_list)):
+    while(mod_index < len(mod_list) and gt_index < len(gt_list)):
         if(gt_list[gt_index] ==  mod_list[mod_index]):
             mod_index += 1
             gt_index += 1
@@ -142,6 +144,7 @@ if __name__ == '__main__':
     # print('added indices = {}'.format(added_indices))
     # print('\n')
 
+    UNIFORM_NOISE_SIGMA =  [DELTA/5, DELTA/4, DELTA/3]
 
     #extract radar data
     radar_data_predictions = radarDataExtractor("data/data-1.txt")
@@ -155,20 +158,21 @@ if __name__ == '__main__':
     qim_encoded_pointcloud = getPointCloud_from_quantizedValues(  np.copy(voxel_halfdelta_npy))
     print('encoded data', qim_encoded_pointcloud)
 
-    pred_plusNoise = tamperRadarAddUniformNoise(0.0, qim_encoded_pointcloud)
-    # print('noise added pc={}'.format(pred_plusNoise))
     
     #open the encoded data and tamper it by adding noise and attack vectors
-    # added_indices, pred_plus_added = tamperRadarAddTracklets(pred_plusNoise)
-    # added_indices, pred_plus_added = tamperRadarDeleteTracklets(pred_plusNoise)
-    added_indices, pred_plus_added = tamperRadarModifyTracklets(pred_plusNoise)
+    added_indices, pred_plus_added = tamperRadarAddTracklets(qim_encoded_pointcloud)
+    # added_indices, pred_plus_added = tamperRadarDeleteTracklets(qim_encoded_pointcloud)
+    # added_indices, pred_plus_added = tamperRadarModifyTracklets(qim_encoded_pointcloud)
 
+    pred_plus_added_Noise = tamperRadarAddUniformNoise(UNIFORM_NOISE_SIGMA[2], pred_plus_added)
+    # print('noise added pc={}'.format(pred_plusNoise))
+    
     
     print('added indices:{}'.format(added_indices))
-    print('modified data:{}'.format(pred_plus_added))
+    print('modified data:{}'.format(pred_plus_added_Noise))
     #decode the tampered point cloud
 
-    decoded_CB, decoded_quantized_values = qim_decode(np.copy(pred_plus_added))
+    decoded_CB, decoded_quantized_values = qim_decode(np.copy(pred_plus_added_Noise))
     print('decoded codebook', decoded_CB)
     decoded_codebook = np.array([decoded_CB]).reshape(-1,NUMBITS)
 
@@ -188,8 +192,8 @@ if __name__ == '__main__':
     groundtruth_list = np.packbits(encoded_cb, axis = 1)
     print('gt_list={}'.format(groundtruth_list))
 
-    # added_indices_recovered = findAddedIndices(groundtruth_list, modified_list)
-    added_indices_recovered = findModifiedIndices(groundtruth_list, modified_list)
+    added_indices_recovered = findAddedIndices(groundtruth_list, modified_list)
+    # added_indices_recovered = findModifiedIndices(groundtruth_list, modified_list)
     # added_indices_recovered = findDeletedIndices(groundtruth_list, modified_list)
     
   
@@ -201,10 +205,41 @@ if __name__ == '__main__':
     print('added indices:\t\t{}'.format(sorted_add_indices))
     # sorted_add_indices[0] = 12
     # sorted_add_indices[2] = 12
+    # # sorted_add_indices[4] = 12
+    # # sorted_add_indices[6] = 12
+    
+    if(len(sorted_recovered_indices) > len(sorted_add_indices)):
+        accuracy_percentage = 0    
+    
     error_prediction =  np.where(sorted_recovered_indices != sorted_add_indices)
+    diff_elements  = np.setdiff1d(sorted_recovered_indices, sorted_add_indices)
+    print('diff elements', diff_elements)
+
+    accuracy_percentage = (len(sorted_add_indices)/len(sorted_recovered_indices))*100
+    
+    # (len(error_prediction[0])/len(sorted_recovered_indices))*100
+    print('Accuracy={}%'.format(np.around(accuracy_percentage)))
+    print('recovered length', len(sorted_recovered_indices))
+    print('added length', len(sorted_add_indices))
+    print('length of error prediction', len(error_prediction[0]))
+    print('length diff', len(np.setdiff1d(sorted_recovered_indices, sorted_add_indices)))
     if(len(error_prediction[0])):
-        print('error n prediction, mismatch indices:{}'.format(error_prediction[0]))
-    else:
+        print('error in prediction, mismatch indices:{}'.format(error_prediction[0]))
+    else: 
         print('you got it buddy! finally..phew!!!!)')
+    
+    del_list = [ 100, 90, 7]
+    add_list = [ 100, 92, 18]
+    modify_list = [ 100, 80, 9]
+    # visulalize_accuracy(delta_range, del_list, add_list, modify_list)
+    visulalize_accuracy(UNIFORM_NOISE_SIGMA, del_list, add_list, modify_list)
+
+    # def visulalize_RMSE(variance_list, RMSE_x_en, RMSE_x_cl, RMSE_y_en, RMSE_y_cl):
 
 
+    RMSE_x_cl = [ 1, 2, 3, 4, 5]
+    RMSE_y_cl = [ 1.2, 2.3, 3.4, 4.5, 5.6]
+    RMSE_x_en = [ 1, 9, 18, 20, 21]
+    RMSE_y_en = [ 6, 7, 8, 9, 10]
+    variance_list = [0.1, 0.2, 0.3, 0.4, 0.5]
+    visulalize_RMSE(variance_list, RMSE_x_en, RMSE_x_cl, RMSE_y_en, RMSE_y_cl)

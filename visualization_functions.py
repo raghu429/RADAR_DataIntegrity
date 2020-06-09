@@ -17,38 +17,65 @@ import matplotlib.pyplot as plt
 def path_plots(gt_xs, gt_ys, clean_xs, clean_ys, encoded_xs, encoded_ys):
     
 #this code plots the difference in the encoded path and the clean path estimate using subplots
-    fig, axs = plt.subplots(1, 2)
-    axs[0].plot(gt_xs, gt_ys, label='Ground Truth Path (GT)', color = 'g')
-    axs[0].set_title('GTvs Plain estimate')
-    axs[0].plot(clean_xs, clean_ys, label='Plain Predicted Path', color = 'y')
-    axs[0].legend(loc="upper left")
+    fig, axs = plt.subplots(2, 2)
+    axs[0,0].plot(gt_xs, gt_ys, label='Ground Truth', color = 'r')
+    axs[0,0].set_title('Plain Estimate')
+    axs[0,0].plot(clean_xs, clean_ys, label='Plain Predicted Path', color = 'c')
+    axs[0,0].set(xlabel='position x (px)', ylabel='position y (py)')
+    # axs[0,0].legend(loc="upper left")
     # axs[0, 0].set_title('Axis [0,0]')
 
     # fig, axs = plt.subplots(1, 2)
-    axs[1].plot(gt_xs, gt_ys,  label='Ground Truth Path', color = 'g')
-    axs[1].set_title('GT Vs encoded estimate')
-    axs[1].plot(encoded_xs, encoded_ys, label='Encoded Path', color='r')
-    axs[1].legend(loc="upper right")
-
-    # axs[0, 1].plot(gt_xs, gt_xs, 'tab:orange')
-    # axs[0, 1].set_title('Axis [0,1]')
+    axs[0,1].plot(gt_xs, gt_ys,  label='Ground Truth', color = 'r')
+    axs[0,1].set_title('Encoded Estimate')
+    axs[0,1].plot(encoded_xs, encoded_ys, label='Encoded Path', color='c')
+    # axs[0,1].legend(loc="upper right")
+    axs[0,1].set(xlabel='position x (px)', ylabel='position y (py)')
+    axs[0,1].legend(bbox_to_anchor=(1, 1))
     
-    for ax in axs.flat:
-        ax.set(xlabel='position x (px)', ylabel='position y (py)')
 
-    # Hide x labels and tick labels for top plots and y ticks for right plots.
-    for ax in axs.flat:
-        ax.label_outer()
+    axs[1,0].plot(gt_xs,  label='Ground Truth', color = 'r')
+    axs[1,0].plot(clean_xs, label='Clean Path', color='k')
+    axs[1,0].plot(encoded_xs, label='Encoded Path', color='c')
+    axs[1,0].set_title('Plain Vs Encoded Estimate')
+    axs[1,0].set(xlabel='time ')
+    axs[1,0].set(ylabel='position x (px)')
+    # axs[1,0].legend(bbox_to_anchor=(-1.05, -1))
 
+    axs[1,1].plot(gt_ys,  label='Ground Truth', color = 'r')
+    axs[1,1].plot(clean_ys, label='Clean Path', color='k')
+    axs[1,1].plot(encoded_ys, label='Encoded Path', color='c')
+    axs[1,1].set_title('Plain Vs Encoded Estimate')
+    axs[1,1].legend(bbox_to_anchor=(1, 1))
+    axs[1,1].set(ylabel='position y (py)')
+    axs[1,1].set(xlabel='time')
+    plt.show()
 
-    # plt.plot(gt_xs,gt_ys, 'b.', label='Ground truth path')
-    # plt.plot(clean_xs,clean_ys, 'y.', label='Path prediction on clean frames')
-    # plt.plot(encoded_xs,encoded_ys, 'r.', label='Path prediction on encoded frames')
-    
-    # plt.title('Path taken by the vehicle')
-    # plt.xlabel('position x (px)')
-    # plt.ylabel('position y (py)')
-    # plt.legend(loc='best')
+def visulalize_accuracy(delta_range, del_list, add_list, modify_list):
+    plt.plot(delta_range, del_list, '*-b', label='Delete')
+    plt.plot(delta_range, add_list, 'o-y', label='Add')
+    plt.plot(delta_range, modify_list, '+-r', label='Modify')
+
+    plt.title('Performance against different attack vectors')
+    plt.xlabel('Step Size')
+    plt.ylabel('Accuracy')
+    plt.legend(loc='best')
+    plt.show()
+
+def visulalize_RMSE(variance_list, RMSE_x_en, RMSE_x_cl, RMSE_y_en, RMSE_y_cl):
+
+    fig, axs = plt.subplots(1, 2)
+    axs[0].set_title('Px at step-size 0.5')
+    axs[0].plot(variance_list, RMSE_x_cl, label='clean', color = 'g')
+    axs[0].plot(variance_list, RMSE_x_en, label='encoded', color = 'r')
+    axs[0].set(xlabel='covarance', ylabel='RMSE')
+    axs[0].legend(loc="upper left")
+
+    axs[1].set_title('Py at step-size 0.5')
+    axs[1].plot(variance_list, RMSE_y_cl, label='clean', color = 'g')
+    axs[1].plot(variance_list, RMSE_y_en, label='encoded', color = 'r')
+    axs[1].set(xlabel='covarance', ylabel='RMSE')
+    axs[1].legend(loc="upper Right")
     plt.show()
 
 # path_visualize(all_ground_truths, clean_all_sensor_data, clean_all_state_estimations, encoded_all_sensor_data, encoded_all_state_estimations)
